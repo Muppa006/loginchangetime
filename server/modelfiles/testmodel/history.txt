@@ -1,0 +1,411 @@
+client
+
+Changedata.jsx
+import React ,{useState,useEffect} from "react";
+import Renderhistory from "./Renderhistorylog";
+import { TiArrowUnsorted } from "react-icons/ti";
+import { useDispatch, useSelector } from "react-redux";
+import './historylog.modules.css';
+import axios from 'axios';
+const Changedata = () =>{
+  let fromdaydate = new Date().getFullYear() +  "-" +    (new Date().getMonth() + 1) +    "-" + pad2(new Date().getDate())   
+  let todaydate =  new Date().getFullYear() +  "-" +    (new Date().getMonth() + 1) +    "-" +   pad2(new Date().getDate()+1)
+  const filterConditions = useSelector((state) => state.filter);
+    const [from,setfrom] = useState(fromdaydate);
+    const [to,setto] = useState(todaydate);
+
+  const [historydata, sethistorydata] = useState([]);
+  const [limit, setLimit] = useState(50);
+  const [skip, setSkip] = useState(0);
+  const [dates, setdates] = useState({
+    fromDate:fromdaydate,
+    toDate: todaydate,
+  });
+  function pad2(n) {
+
+    return (n < 10 ? '0' : '') + n;
+
+  }
+  
+  const nextPage = () => {
+      setSkip(skip + limit)
+      axios
+      .post("/historyfilternextpage",
+      {
+        from:from,
+        to:to,
+        skip:skip,
+        limit:limit
+      } )
+      .then((res) => {
+        console.log(res.data);
+        // sethistorydata(res.data)
+        const hdfn = []
+      res.data.map(ele=>{
+      hdfn.push(<Renderhistory key={Math.random().toString()} hditm={ele}/>)
+      })
+      sethistorydata([...hdfn])
+        
+      })
+      .catch(err=>console.log(err))  
+      // setfrom("")
+      // setto("")
+      };
+
+  
+
+  const previousPage = () => {
+      if(skip!=0){
+        setSkip(skip-limit)
+      
+      axios
+      .post("/historyfilterpreviouspage",
+      {
+        from:from,
+        to:to,
+        skip:skip,
+        limit:limit
+      } )
+      .then((res) => {
+        console.log(res.data);
+        // sethistorydata(res.data)
+        const hdfp = []
+      res.data.map(ele=>{
+      hdfp.push(<Renderhistory key={Math.random().toString()} hditm={ele}/>)
+      })
+      sethistorydata([...hdfp])
+        
+      })
+      .catch(err=>console.log(err))  
+      // setfrom("")
+      // setto("")
+      }
+      else
+      {setSkip(0)}
+    
+      };
+
+const handlehistoryinputfrom = (e) =>{
+  setfrom(e.target.value)
+  setSkip(0)
+}
+const handlehistoryinputto = (e) =>{
+  setto(e.target.value)
+  setSkip(0)
+}
+
+useEffect(()=>{ 
+      
+  axios
+  .post("/historydaydata",
+  {
+    from:from,
+    to:to,
+    skip:skip,
+    limit:limit
+  }
+  // dates
+  )
+  .then((res) => {
+    console.log(res.data);
+    // sethistorydata(res.data)
+    const hd = []
+    res.data.map(ele=>{
+hd.push(<Renderhistory key={Math.random().toString()} hditm={ele}/>)
+// hd.push(res.data)
+})
+sethistorydata([...hd])
+    
+  })
+  .catch(err=>console.log(err))  
+  
+},[skip, limit])
+
+
+const applyFilterHandler = (e) => {
+   
+  axios
+.post("/historyfilter",
+{
+  from:from,
+  to:to,
+  skip:skip,
+  limit:limit
+} )
+.then((res) => {
+  console.log(res.data);
+  // sethistorydata(res.data)
+  const hdf = []
+res.data.map(ele=>{
+hdf.push(<Renderhistory key={Math.random().toString()} hditm={ele}/>)
+})
+sethistorydata([...hdf])
+  
+})
+.catch(err=>console.log(err))  
+// setfrom("")
+// setto("")
+};
+
+
+  return(
+  <>
+   <h1>History Logs</h1>
+<div className="history-filter">
+                  
+
+<input className='history-input'
+type="date"
+value={from}
+name="from"
+onChange={handlehistoryinputfrom}
+/>
+
+<input className='history-input'
+type="date"
+name="to"
+value={to}
+onChange={handlehistoryinputto}
+/>
+     <button type="submit" className="history-submitbtn" onClick={applyFilterHandler} >
+            Search
+          </button>
+          </div>
+  <div  className="historytable">
+  <table >
+              <thead >
+                <tr>
+                  <th className="thf">
+                    S.No
+                    <TiArrowUnsorted />
+                    </th>
+                  <th className="thf" >User Name</th>
+                  <th className="thf">Time Stamp</th>
+                  <th className="thf">Item Modified</th>
+                  <th className="thf">Table Name</th>
+                  <th className="thf">Old Value</th>
+                  <th className="thf">New Value</th>
+                </tr>
+              </thead>
+               <tbody>
+                {historydata}
+               </tbody>
+            </table>
+    </div>
+            <div className="pages"> 
+            <button onClick={previousPage}  className="pagebutton" > Previous Page </button>
+            <button onClick={nextPage}  className="pagebutton" > Next Page </button> 
+        </div>
+
+ </>
+  );
+};
+
+export default Changedata;
+
+history.modules.css:
+.historylog-css{
+    background-color:white;
+    width:100%;
+}
+.historylog-css:hover,.historylog-css:active,.historylog-css::after{
+    background-color: white;
+}
+.pages{
+    float:right;
+    margin: 1rem;
+  
+
+}
+.historytable{
+    
+  width: 89vw;
+  height: 55vh;
+ background: #ffffff 0% 0% no-repeat padding-box;
+  box-shadow: 0px 0.2rem 0.2rem #003e6129;
+  border: 1px solid #e4e4e4;
+  border-radius: 1rem;
+  opacity: 1;
+  padding: 1rem 1rem 1rem 1rem;
+  align-content: center;
+  margin:  1rem; 
+  scroll-behavior: smooth;
+  overflow: scroll;
+  white-space: nowrap;
+  scroll-behavior: auto;
+  /* font: normal normal normal 16px/5px Roboto; */
+  overflow-y: scroll;
+ 
+}
+.pagebutton{
+    height:5vh;
+    padding:0.5rem;
+    background-color: #0f206c;
+    color: white;
+}
+.history-filter{
+    width: 89vw;
+    height: 10vh;
+    background: #ffffff 0% 0% no-repeat padding-box;
+    box-shadow: 0px 0.2rem 0.2rem #003e6129;
+    border: 1px solid #e4e4e4;
+    border-radius: 1rem;
+    opacity: 1;
+    /* padding: 1rem 1rem 1rem 1rem; */
+    align-content: center;
+    margin:  1rem; 
+}
+.history-input{
+    width: 20vw;
+    height:6vh;
+    margin:1rem;
+}
+.history-submitbtn{
+    width: 10vw;
+    height:6vh;
+    margin:1rem;
+    background-color: #0f206c;
+    color: white;
+}
+.thf {
+    color: #0f206c;
+    font-size: 1rem;
+    padding: 1rem 1rem 0.3rem 2rem;
+    justify-content: space-evenly;
+    font-weight: bold;
+    font-stretch: 1rem;
+    text-align: left;
+    width: 12vw;
+    border-bottom: 1px solid #212121;
+    /* border-style: outset; */
+    /* border-style:solid ;
+    border-bottom: 1px solid #212121;
+    border:0px 0px 1px 0px; */
+    
+  }
+  .tdf{
+    color: black;
+    font-size: 0.8rem;
+    padding: 1rem 1rem 0.3rem 2rem;
+    justify-content: space-evenly;
+    font-weight: bold;
+    /* font-stretch: 1rem; */
+    text-align: left;
+    width: 12vw;
+   
+  }
+
+Renderhistorylog.jsx:
+
+import React from "react";
+import './historylog.modules.css';
+
+const Renderhistory = (props) => {
+  
+  return (
+    <tr>
+      <td className="tdf"> {props.hditm.Sl_No}</td>
+      <td className="tdf">{props.hditm.User_Name}</td>
+      <td className="tdf">{props.hditm.Time_Stamp}</td>
+      <td className="tdf">{props.hditm.Item_Modified}</td>
+      <td className="tdf">{props.hditm.Table_Name}</td>
+      <td className="tdf">{props.hditm.Old_Value}</td>
+      <td className="tdf">{props.hditm.New_Value}</td>
+    </tr>
+  );
+};
+
+export default Renderhistory;
+
+
+server.js:
+
+app.post('/historyfilter', (req,res) => {
+  console.log("request arrivedf")
+ 
+  console.log(req.body.from)
+  console.log(req.body.to)
+  console.log(req.body.skip)
+  console.log(req.body.limit)
+  let value = (req.body.skip);
+  console.log(value);
+  // let filterdata = `select * from historylog where Sl_No BETWEEN ? AND ?`;
+  db.all(`select * from historylog where Time_Stamp BETWEEN ? AND ? LIMIT ? OFFSET  ?`,[req.body.from,req.body.to+1,req.body.limit,value],(err, hfrows) => {
+   
+    if (err) {
+      throw err;
+    }
+    
+    res.send(hfrows);
+    console.log(hfrows )
+  })
+
+});
+
+app.post('/historyfilternextpage', (req,res) => {
+  console.log("request arrived for nextpage")
+ 
+  console.log(req.body.from)
+  console.log(req.body.to)
+  console.log(req.body.skip)
+  console.log(req.body.limit)
+  let value = (req.body.skip);
+  console.log(value);
+  // let filterdata = `select * from historylog where Sl_No BETWEEN ? AND ?`;
+  db.all(`select * from historylog where Time_Stamp BETWEEN ? AND ? LIMIT ? OFFSET  ?`,[req.body.from,req.body.to+1,req.body.limit,value],(err, hfnrows) => {
+   
+    if (err) {
+      throw err;
+    }
+    
+    res.send(hfnrows);
+    console.log(hfnrows )
+  })
+
+});
+
+app.post('/historyfilterpreviouspage', (req,res) => {
+  console.log("request arrived for")
+ 
+  console.log(req.body.from)
+  console.log(req.body.to)
+  console.log(req.body.skip)
+  console.log(req.body.limit)
+  let value = (req.body.skip);
+  console.log(value);
+  // let filterdata = `select * from historylog where Sl_No BETWEEN ? AND ?`;
+  db.all(`select * from historylog where Time_Stamp BETWEEN ? AND ? LIMIT ? OFFSET  ?`,[req.body.from,req.body.to+1,req.body.limit,value],(err, hfrows) => {
+   
+    if (err) {
+      throw err;
+    }
+    
+    res.send(hfrows);
+    console.log(hfrows )
+  })
+
+});
+
+
+  app.post('/historydaydata', (req,res) => {
+    console.log("request for historylog arrived")
+    console.log(req.body.from)
+    console.log(req.body.to)
+    console.log(req.body.skip)
+    console.log(req.body.limit)
+    let value = (req.body.skip);
+    console.log(value);
+    // let filterdata = `select * from historylog where Sl_No BETWEEN ? AND ?`;
+   db.all(`select * from historylog where Time_Stamp BETWEEN ? AND ?   LIMIT ? OFFSET  ?`,[req.body.from,req.body.to,req.body.limit,value],(err, hdrows) => {
+      
+     //db.all(`select * from historylog (MULTISET (SELECT SKIP ? FIRST ?) where Time_Stamp BETWEEN ? AND ?  `,[req.body.skip,req.body.limit,req.body.from,req.body.to],(err, hdrows) => {
+      if (err) {
+        throw err;
+      }
+      
+      res.send(hdrows);
+     
+      console.log(hdrows )
+    })
+
+  });
